@@ -115,7 +115,7 @@ def learn_reward(reward_network, optimizer, training_inputs, training_outputs, n
             loss.backward()
             optimizer.step()
         
-        print(f'Epoch {epoch + 1}/{num_iter}, Loss: {total_loss / len()}')
+        print(f'Epoch {epoch + 1}/{num_iter}, Loss: {total_loss / len(training_inputs)}')
 
 
     #After training we save the reward function weights    
