@@ -30,12 +30,17 @@ class Net(nn.Module):
         # Feel free to use the mlp helper function above or construct the network and forward() manually like you did in assignment 1.
         # Hint: states in cartpole are 4-dimensional (x,xdot,theta,thetadot)
         # https://www.gymlibrary.dev/environments/classic_control/cart_pole/
+        
+        self.network = mlp([4, 64, 64, 1], activation=nn.ReLU, output_activation=nn.Identity)
    
 
     def predict_return(self, traj):
         '''calculate return (cumulative reward) of a trajectory (could be any number of timesteps)'''
         #TODO should take in a trajectory and output a scalar cumulative reward estimate
-        
+
+        rewards = self.network(traj)
+        cumulative_reward = rewards.sum()
+        return cumulative_reward
 
 
 

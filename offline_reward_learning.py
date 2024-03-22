@@ -81,6 +81,8 @@ def predict_traj_return(net, traj):
 def learn_reward(reward_network, optimizer, training_inputs, training_outputs, num_iter, checkpoint_dir):
     #check if gpu available
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+    reward_network.to(device)
     
     #We will use a cross entropy loss for pairwise preference learning
     loss_criterion = nn.CrossEntropyLoss()
@@ -93,7 +95,26 @@ def learn_reward(reward_network, optimizer, training_inputs, training_outputs, n
     # Hint: You may find torch.cat useful.
     # Hint: You may also find unsqueeze useful. For example, if x is the tensor [1,2,3] (which has shape [3]), then x.unsqueeze(0) returns [[1,2,3]] (which has shape [1,3])
 
-
+    for epoch in range(num_iter):
+        total_loss = 0
+        
+        for i, (traj_pair, label) in enumerate(zip(training_inputs, training_outputs)):
+            optimizer.zero_grad()
+            traj_a, traj_b = traj_pair
+            traj_a = torch.tensor(traj_a, dtype=torch.float32, device=device)
+            traj_b = torch.tensor(traj_b, dtype=torch.float32, device=device)
+            cum_reward_a = reward_network.predict_return(traj_a).unsqueeze(0)
+            cum_reward_b = reward_network.predict_return(traj_b).unsqueeze(0) 
+            
+            logits = torch.cat((cum_reward_a, cum_reward_b))
+            target = torch.tensor([label], dtype=torch.long, device=device)
+            
+            loss = loss_criterion(logits, target)
+            total_loss += loss.item()
+            loss.backward()
+            optimizer.step()
+        
+        print(f'Epoch {epoch + 1}/{num_iter}, Loss: {total_loss / len()}')
 
 
     #After training we save the reward function weights    
