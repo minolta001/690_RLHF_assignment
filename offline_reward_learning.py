@@ -106,10 +106,7 @@ def learn_reward(reward_network, optimizer, training_inputs, training_outputs, n
             cum_reward_a = reward_network.predict_return(traj_a).unsqueeze(0)
             cum_reward_b = reward_network.predict_return(traj_b).unsqueeze(0) 
 
-            print(cum_reward_a)
-            print(cum_reward_b)
-            
-            logits = torch.cat((cum_reward_a, cum_reward_b))
+            logits = torch.cat((cum_reward_a, cum_reward_b)).unsqueeze(0)
 
             target = torch.tensor([label], dtype=torch.long, device=device)
             
