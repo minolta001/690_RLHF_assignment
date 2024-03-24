@@ -7,6 +7,7 @@ import gym
 from gym.spaces import Discrete, Box
 import matplotlib.pyplot as plt
 from vpg import mlp
+from matplotlib.pyplot as plt
 
 
 
@@ -42,6 +43,17 @@ def generate_rollout(policy, env, rendering = False):
 
 
     return obs_traj, cum_ret
+
+
+def evaluate_policy(checkpoint, env, num_rollouts=5, rendering=False):
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    policy.load_state_dict(torch.load(checkpoint))
+    returns = 0
+    
+    for i in range(num_rollouts):
+        _, cum_ret = generate_rollout(policy, env, rendering=rendering)
+        returns += cum_ret
+    return returns / num_rollouts
         
         
 
@@ -51,25 +63,31 @@ if __name__ == '__main__':
     parser.add_argument('--env_name', '--env', type=str, default='CartPole-v0')
     parser.add_argument('--render', action='store_true')
     parser.add_argument('--lr', type=float, default=1e-2)
-    parser.add_argument('--checkpoint', type=str, default='', help="pretrained policy weights")
+    #parser.add_argument('--checkpoint', type=str, default='', help="pretrained policy weights")
     parser.add_argument('--num_rollouts', type=int, default=1)
     
     args = parser.parse_args()
 
-    checkpoint = args.checkpoint
+    avg_returns = []
 
     # make core of policy network
     env = gym.make(args.env_name)
     obs_dim = env.observation_space.shape[0]
     n_acts = env.action_space.n
     hidden_sizes=[32]
-    policy = mlp(sizes=[obs_dim]+hidden_sizes+[n_acts])
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    policy.load_state_dict(torch.load(checkpoint))
-    
-    returns = 0
-    for i in range(args.num_rollouts):
-        _, cum_ret = generate_rollout(policy, env, rendering=args.render)
-        print("cumulative return", cum_ret)
-        returns += cum_ret
-    print("average return", returns/args.num_rollouts)
+
+
+    for i in range(50):
+        policy = mlp(sizes=[obs_dim]+hidden_sizes+[n_acts])
+        checkpoint = './rlhf/policy_checkpoint' + f'{i}' + '.params'
+        avg_ret =evaluate_policy(checkpoint, env, num_rollouts=args.num_rollouts, rendering=False)
+        avg_returns.append(avg_ret)
+        print(f"Average return for policy {checkpoint}: {avg_ret}")
+
+    # Plotting
+    plt.plot(avg_returns, marker='o', linestyle='-')
+    plt.title('Average Returns of Policies')
+    plt.xlabel('Policy Index')
+    plt.ylabel('Average Return')
+    plt.grid(True)
+    plt.show()
