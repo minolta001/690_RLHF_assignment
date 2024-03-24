@@ -7,7 +7,7 @@ import gym
 from gym.spaces import Discrete, Box
 import matplotlib.pyplot as plt
 from vpg import mlp
-from matplotlib.pyplot import plt
+import matplotlib.pyplot as plt
 
 
 
